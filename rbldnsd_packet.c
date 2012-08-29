@@ -10,6 +10,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <syslog.h>
+#include "hash.h"
 #include "rbldnsd.h"
 
 #ifndef NO_IPv6
@@ -966,15 +967,25 @@ void logreply(const struct dnspacket *pkt, FILE *flog, int flushlog) {
 
   cp += sprintf(cp, "%lu ", (unsigned long)time(NULL));
 #ifndef NO_IPv6
-  if (getnameinfo(pkt->p_peer, pkt->p_peerlen,
-                  cp, NI_MAXHOST, NULL, 0,
-                  NI_NUMERICHOST) == 0)
-    cp += strlen(cp);
-  else
-    *cp++ = '?';
+  if (! getnameinfo(pkt->p_peer, pkt->p_peerlen,
+                    cp, NI_MAXHOST, NULL, 0,
+                    NI_NUMERICHOST) == 0) {
+    *cp = '?';
+    *(cp + 1) = '\0';
+  }
+
+  sha256(cp, strlen(cp), cp);
+  cp += 64;
+  *cp++ = '\0';
 #else
+  /*
   strcpy(cp, inet_ntoa(((struct sockaddr_in*)pkt->p_peer)->sin_addr));
   cp += strlen(cp);
+  */
+  sha256(((struct sockaddr_in*)pkt->p_peer)->sin_addr,
+         sizeof(struct in_addr),
+         cp);
+  cp += 64;
 #endif
   *cp++ = ' ';
   cp += dns_dntop(pkt->p_buf + p_hdrsize, cp, DNS_MAXDOMAIN);
