@@ -12,7 +12,7 @@ else
   exit 1
 fi
 
-options="ipv6 stats master_dump zlib dso openssl"
+options="ipv6 stats master_dump zlib dso anonymize geoip"
 
 for opt in $options; do
   eval enable_$opt=
@@ -25,7 +25,7 @@ fi
 enable() {
   opt=`echo "$1" | sed 's/^--[^-]*-//'`
   case "$opt" in
-    ipv6|stats|master_dump|zlib|dso|openssl) ;;
+    ipv6|stats|master_dump|zlib|dso|anonymize|geoip) ;;
     master-dump) opt=master_dump ;;
     *) echo "configure: unrecognized option \`$1'" >&2; exit 1;;
   esac
@@ -52,7 +52,8 @@ Optional features (all enabled by default if system supports a feature):
   master-dump - enable/disable master-format (bind) dump support (-d option)
   zlib - zlib support
   dso - dynamic extensions (using shared objects) -- disabled by default
-  openssl - openssl support
+  anonymize - replace IP addresses with SHA256 digest in logfile
+  geoip - GeoIP support
 EOF
       exit 0
       ;;
@@ -311,9 +312,9 @@ if [ n = "$enable_master_dump" ]; then
   echo "#define NO_MASTER_DUMP	1	/* option disabled */" >>confdef.h
 fi
 
-if [ n = "$enable_openssl" ]; then
-  echo "#define NO_OPENSSL	1	/* option disabled */" >>confdef.h
-elif ac_link_v "for oppenssl support" -lcrypto <<EOF
+if [ n = "$enable_anonymize" ]; then
+  echo "#define NO_ANONYMIZE	1	/* option disabled */" >>confdef.h
+elif ac_link_v "for OpenSSL support" -lcrypto <<EOF
 #include <openssl/sha.h>
 int main() {
   SHA256_CTX sha256;
@@ -323,10 +324,28 @@ int main() {
 EOF
 then
   LIBS="$LIBS -lcrypto"
-elif [ "$enable_openssl" ]; then
+elif [ "$enable_anonymize" ]; then
   ac_fatal "openssl support is requested but not found/available"
 else
-  echo "#define NO_OPENSSL" >>confdef.h
+  echo "#define NO_ANONYMIZE" >>confdef.h
+fi
+
+if [ n = "$enable_geoip" ]; then
+  echo "#define NO_GEOIP	1	/* option disabled */" >>confdef.h
+elif ac_link_v "for GeoIP support" -lcrypto <<EOF
+#include <GeoIP.h>
+int main() {
+  GeoIP *gi;
+  gi = GeoIP_new(GEOIP_STANDARD);
+  return 0;
+}
+EOF
+then
+  LIBS="$LIBS -lGeoIP"
+elif [ "$enable_geoip" ]; then
+  ac_fatal "GeoIP support is requested but not found/available"
+else
+  echo "#define NO_GEOIP" >>confdef.h
 fi
 
 ac_output Makefile
