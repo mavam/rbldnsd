@@ -52,7 +52,7 @@ Optional features (all enabled by default if system supports a feature):
   master-dump - enable/disable master-format (bind) dump support (-d option)
   zlib - zlib support
   dso - dynamic extensions (using shared objects) -- disabled by default
-  anonymize - replace IP addresses with SHA256 digest in logfile
+  anonymize - replace IP addresses with SHA256 digests in logfile
   geoip - GeoIP support
 EOF
       exit 0
