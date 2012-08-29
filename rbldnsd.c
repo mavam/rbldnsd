@@ -114,6 +114,8 @@ static struct iovec *stats_iov;
 int (*hook_reload_check)(), (*hook_reload)();
 int (*hook_query_access)(), (*hook_query_result)();
 #endif
+int anonymize = 0;  /* 1 to enable anonymization of IP address in log file */
+int geoip = 0;  /* 1 to add GeoIP information to log file */
 
 /* a list of zonetypes. */
 const struct dstype *ds_types[] = {
@@ -182,6 +184,12 @@ static void NORETURN usage(int exitcode) {
 #ifndef NO_DZO
 " -x extension - load given extension module (.so file)\n"
 " -X extarg - pass extarg to extension init routine\n"
+#endif
+#ifndef NO_ANONYMIZE
+" -z enable anonymization of IP addresses in log file\n"
+#endif
+#ifndef NO_GEOIP
+" -g enable anonymization of IP addresses in log file\n"
 #endif
 " -d - dump all zones in BIND format to standard output and exit\n"
 "each zone specified using `name:type:file,file...'\n"
@@ -368,7 +376,7 @@ static void init(int argc, char **argv) {
 
   if (argc <= 1) usage(1);
 
-  while((c = getopt(argc, argv, "u:r:b:w:t:c:p:nel:qs:h46dvaAfCx:X:")) != EOF)
+  while((c = getopt(argc, argv, "u:r:b:w:t:c:p:nel:qs:h46dvaAfCx:X:zg")) != EOF)
     switch(c) {
     case 'u': user = optarg; break;
     case 'r': rootdir = optarg; break;
@@ -458,6 +466,18 @@ break;
     case 'x':
     case 'X':
       error(0, "extension support is not compiled in");
+#endif
+#ifndef NO_ANONYMIZE
+    case 'z': anonymize = 1; break;
+#else
+    case 'z':
+      error(0, "anonymization support is not compiled in");
+#endif
+#ifndef NO_GEOIP
+    case 'g': geoip = 1; break;
+#else
+    case 'g':
+      error(0, "geoip support is not compiled in");
 #endif
     case 'h': usage(0);
     default: error(0, "type `%.50s -h' for help", progname);
@@ -1050,7 +1070,7 @@ static void request(int fd) {
   if (!r)
     return;
   if (flog)
-    logreply(&pkt, flog, flushlog);
+    logreply(&pkt, flog, flushlog, anonymize, geoip);
 
   /* finally, send a reply */
   while(sendto(fd, (void*)pkt.p_buf, r, 0,

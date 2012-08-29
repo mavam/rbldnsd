@@ -960,43 +960,36 @@ static int version_req(struct dnspacket *pkt, const struct dnsquery *qry) {
   return 1;
 }
 
-void logreply(const struct dnspacket *pkt, FILE *flog, int flushlog) {
+void logreply(const struct dnspacket *pkt, FILE *flog, int flushlog,
+              int anonymize, int geoip) {
   char cbuf[DNS_MAXDOMAIN + IPSIZE + 50];
   char *cp = cbuf;
   const unsigned char *const q = pkt->p_sans - 4;
 
   cp += sprintf(cp, "%lu ", (unsigned long)time(NULL));
 #ifndef NO_IPv6
-# ifndef NO_ANONYMIZE
   if (! getnameinfo(pkt->p_peer, pkt->p_peerlen,
                     cp, NI_MAXHOST, NULL, 0,
                     NI_NUMERICHOST) == 0) {
     *cp = '?';
     *(cp + 1) = '\0';
   }
-
-  sha256(cp, strlen(cp), cp);
-  cp += 64;
-  *cp++ = '\0';
-# else
-  if (getnameinfo(pkt->p_peer, pkt->p_peerlen,
-                  cp, NI_MAXHOST, NULL, 0,
-                  NI_NUMERICHOST) == 0)
-    cp += strlen(cp);
-  else
-    *cp++ = '?';
-# endif
 #else
-# ifndef NO_ANONYMIZE
-  sha256(((struct sockaddr_in*)pkt->p_peer)->sin_addr,
-         sizeof(struct in_addr),
-         cp);
-  cp += 64;
-# else
   strcpy(cp, inet_ntoa(((struct sockaddr_in*)pkt->p_peer)->sin_addr));
-  cp += strlen(cp);
-# endif
 #endif
+
+#ifndef NO_ANONYMIZE
+  if (anonymize) {
+    sha256(cp, strlen(cp), cp);
+    cp += 64;
+    *cp++ = '\0';
+  }
+  else
+    cp += strlen(cp);
+#else
+  cp += strlen(cp);
+#endif
+
   *cp++ = ' ';
   cp += dns_dntop(pkt->p_buf + p_hdrsize, cp, DNS_MAXDOMAIN);
   cp += sprintf(cp, " %s %s: %s/%u/%d\n",
