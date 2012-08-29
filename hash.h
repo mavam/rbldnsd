@@ -1,4 +1,5 @@
-#include <openssl/sha.h>
+#ifndef HASH_H
+#define HASH_H
 
 /// Computes the SHA256 hash for a given contiguous chunk of bytes.
 ///
@@ -11,3 +12,5 @@
 ///
 /// @return 1 on success and 0 on failure.
 int sha256(void *bytes, size_t size, char out[64]);
+
+#endif /* include guard */
