@@ -1008,7 +1008,6 @@ void logreply(const struct dnspacket *pkt, FILE *flog, int flushlog,
     cp += strlen(cp);
 #endif
 
-  fprintf(stderr, "gir:%d\n", geoip_lookup ? 1 : 0);
 #ifndef NO_GEOIP
   if (geoip_lookup) {
     static int geoip_initialized = 0;
