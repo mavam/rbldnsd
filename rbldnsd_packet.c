@@ -1113,7 +1113,16 @@ void logreply(const struct dnspacket *pkt, FILE *flog, int flushlog,
           cp += sprintf(cp, "%u.%u.%u.%u", q[16], q[17], q[18], q[19]);
         break;
       case DNS_T_TXT:
-        cp += snprintf(cp, rdlength, "%s", q + 16);
+        /* The first byte of the TXT encodes the TXT data length, which is
+         * typically RDLENGTH - 1. This is not documented in RFC 1035. We trust
+         * RDLENGTH more than RDATA[0] and thus use RDLENGTH as upper bound for
+         * the size of the TXT DATA. */
+        {
+          unsigned txt_data_len = (unsigned)q[16];
+          unsigned len = txt_data_len > rdlength ? rdlength - 1 : txt_data_len;
+          memcpy(cp, q + 16 + 1, len);
+          cp += len;
+        }
         break;
     }
   }
