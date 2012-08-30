@@ -19,6 +19,8 @@
 # else
 #  define IPSIZE NI_MAXHOST
 # endif
+#elif !defined(NO_ANONYMIZE)
+# define IPSIZE 64
 #else
 # define IPSIZE 16
 #endif
