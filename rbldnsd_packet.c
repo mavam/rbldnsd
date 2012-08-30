@@ -1007,9 +1007,8 @@ void logreply(const struct dnspacket *pkt, FILE *flog, int flushlog,
     cp += 64;
   }
   else
-#else
-    cp += strlen(cp);
 #endif
+    cp += strlen(cp);
 
 #ifndef NO_GEOIP
   if (geoip_lookup) {
