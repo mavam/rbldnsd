@@ -367,6 +367,16 @@ then
   echo "#define HAVE_GEOIP_CITY_EDITION_REV0_V6" >>confdef.h
 fi
 
+if ac_link_v "for GeoIP City Edition rev1 v6" <<EOF
+#include <GeoIPCity.h>
+int main() {
+  return GeoIP_db_avail(GEOIP_CITY_EDITION_REV1_V6);
+}
+EOF
+then
+  echo "#define HAVE_GEOIP_CITY_EDITION_REV1_V6" >>confdef.h
+fi
+
 ac_output Makefile
 ac_msg "creating config.h"
 mv -f confdef.h config.h

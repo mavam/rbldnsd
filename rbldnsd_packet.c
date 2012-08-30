@@ -970,9 +970,11 @@ static GeoIP* open_geoip_db(GeoIPDBTypes type)
           GeoIPDBFileName[type]);
     geoip = GeoIP_open_type(type, GEOIP_MEMORY_CACHE);
   }
+/*
   else
     dslog(LOG_WARNING, 0, "could not find GeoIP database: %s",
           GeoIPDBFileName[type]);
+*/
 
   return geoip;
 }
@@ -1018,17 +1020,26 @@ void logreply(const struct dnspacket *pkt, FILE *flog, int flushlog,
 # endif
     if (! geoip_initialized) {
       geoip_initialized = 1;
-      geoip = open_geoip_db(GEOIP_CITY_EDITION_REV0);
+      geoip = open_geoip_db(GEOIP_CITY_EDITION_REV1);
+      if (! geoip)
+        geoip = open_geoip_db(GEOIP_CITY_EDITION_REV0);
       if (geoip)
         have_city_db = 1;
       else {
         geoip = open_geoip_db(GEOIP_COUNTRY_EDITION);
-        if (! geoip)
+        if (geoip)
+          dslog(LOG_WARNING, 0, "fell back to GeoIP City/Country edition");
+        else
           error(0, "can't initialize GeoIP City/Country database");
       }
 # ifndef NO_IPv6
+#  ifdef HAVE_GEOIP_CITY_EDITION_REV1_V6
+      geoip_v6 = open_geoip_db(GEOIP_CITY_EDITION_REV1_V6);
+#  endif
 #  ifdef HAVE_GEOIP_CITY_EDITION_REV0_V6
-      geoip_v6 = open_geoip_db(GEOIP_CITY_EDITION_REV0_V6);
+      if (! geoip_v6)
+        geoip_v6 = open_geoip_db(GEOIP_CITY_EDITION_REV0_V6);
+
       if (geoip_v6)
         have_cityv6_db = 1;
 #  endif
