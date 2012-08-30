@@ -1075,26 +1075,11 @@ void logreply(const struct dnspacket *pkt, FILE *flog, int flushlog,
         cc = GeoIP_country_code_by_ipnum(geoip, a);
     }
 
-    *cp++ = sep;
-    if (gir && gir->country_code)
-      strcpy(cp, gir->country_code);
+    if (gir)
+      cp += sprintf(cp, "%c%s%c%s%c%s",
+                    sep, gir->country_code, sep, gir->region, sep, gir->city);
     else
-      strcpy(cp, "<country>");
-    cp += strlen(cp);
-
-    *cp++ = sep;
-    if (gir && gir->region)
-      strcpy(cp, gir->region);
-    else
-      strcpy(cp, "<region>");
-    cp += strlen(cp);
-
-    *cp++ = sep;
-    if (gir && gir->city)
-      strcpy(cp, gir->city);
-    else
-      strcpy(cp, "<city>");
-    cp += strlen(cp);
+      cp += sprintf(cp, "%c<country>%c<region>%c<city>", sep, sep, sep);
 
     /*
     *cp++ = sep;
@@ -1124,26 +1109,18 @@ void logreply(const struct dnspacket *pkt, FILE *flog, int flushlog,
   /* Only log answers if they're present. */
   if (pkt->p_buf[p_ancnt2] > 0) {
     /* unsigned ttl = unpack32(q + 10); */
-
     unsigned rdlength = ((unsigned)q[14]<<8) | q[15];
     *cp++ = sep;
     switch (((unsigned)q[0]<<8)|q[1]) {
       default:
         break;
       case DNS_T_A:
-        {
-          /* If the A record contains a single IPv4, we log it. */
-          if (rdlength == 4)
-          {
-            unsigned addr = unpack32(q + 16);
-            cp += sprintf(cp, "%u.%u.%u.%u", q[16], q[17], q[18], q[19]);
-          }
-        }
+        /* If the A record contains a single IPv4, we log it. */
+        if (rdlength == 4)
+          cp += sprintf(cp, "%u.%u.%u.%u", q[16], q[17], q[18], q[19]);
         break;
       case DNS_T_TXT:
-        {
-          cp += sprintf(cp, "%s", q + 16);
-        }
+        cp += sprintf(cp, "%s", q + 16);
         break;
     }
   }
