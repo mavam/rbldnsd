@@ -87,6 +87,7 @@ void error(int errnum, const char *fmt, ...) {
 static unsigned recheck = 60;	/* interval between checks for reload */
 static int initialized;		/* 1 when initialized */
 static char *logfile;		/* log file name */
+static int verbose = 0;     /* 1 to log details of packet replies */
 #ifndef NO_STATS
 static char *statsfile;		/* statistics file */
 static int stats_relative;	/* dump relative, not absolute, stats */
@@ -168,6 +169,7 @@ static void NORETURN usage(int exitcode) {
 "  during reload (may double memory requiriments)\n"
 " -q - quickstart, load zones after backgrounding\n"
 " -l [+]logfile - log queries and answers to this file (+ for unbuffered)\n"
+" -L log more answer details to log file\n"
 #ifndef NO_STATS
 " -s [+]statsfile - write a line with short statistics summary into this\n"
 "  file every `check' (-c) secounds, for rrdtool-like applications\n"
@@ -376,7 +378,8 @@ static void init(int argc, char **argv) {
 
   if (argc <= 1) usage(1);
 
-  while((c = getopt(argc, argv, "u:r:b:w:t:c:p:nel:qs:h46dvaAfCx:X:zg")) != EOF)
+  const char *const getopt_fmt = "u:r:b:w:t:c:p:nel:Lqs:h46dvaAfCx:X:zg";
+  while((c = getopt(argc, argv, getopt_fmt)) != EOF)
     switch(c) {
     case 'u': user = optarg; break;
     case 'r': rootdir = optarg; break;
@@ -434,6 +437,8 @@ static void init(int argc, char **argv) {
       else if (logfile[0] == '-' && logfile[1] == '\0')
         logfile = NULL, flog = stdout;
       break;
+    case 'L':
+      verbose = 1; break;
 break;
     case 's':
 #ifdef NO_STATS
@@ -1070,7 +1075,7 @@ static void request(int fd) {
   if (!r)
     return;
   if (flog)
-    logreply(&pkt, flog, flushlog, anonymize, geoip);
+    logreply(&pkt, flog, flushlog, anonymize, geoip, verbose);
 
   /* finally, send a reply */
   while(sendto(fd, (void*)pkt.p_buf, r, 0,

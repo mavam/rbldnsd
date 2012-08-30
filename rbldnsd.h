@@ -292,7 +292,7 @@ findqzone(const struct zone *zonelist,
 
 /* log a reply */
 void logreply(const struct dnspacket *pkt, FILE *flog, int flushlog,
-              int anonymize, int geoip_lookup);
+              int anonymize, int geoip_lookup, int verbose);
 
 /* details of DNS packet structure are in rbldnsd_packet.c */
 

@@ -983,7 +983,7 @@ static GeoIP* open_geoip_db(GeoIPDBTypes type)
 #endif
 
 void logreply(const struct dnspacket *pkt, FILE *flog, int flushlog,
-              int anonymize, int geoip_lookup) {
+              int anonymize, int geoip_lookup, int verbose) {
   static const char sep = '\t';
   char cbuf[DNS_MAXDOMAIN + IPSIZE + 50];
   char *cp = cbuf;
@@ -1107,7 +1107,7 @@ void logreply(const struct dnspacket *pkt, FILE *flog, int flushlog,
       (int)(pkt->p_cur - pkt->p_buf));
 
   /* Only log answers if they're present. */
-  if (pkt->p_buf[p_ancnt2] > 0) {
+  if (verbose && pkt->p_buf[p_ancnt2] > 0) {
     /* unsigned ttl = unpack32(q + 10); */
     unsigned rdlength = ((unsigned)q[14]<<8) | q[15];
     *cp++ = sep;
