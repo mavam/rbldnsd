@@ -1,28 +1,29 @@
-This version of [rbldnsd](http://www.corpit.ru/mjt/rbldnsd.html) comes with the
-following enhancements to the basic logfile:
+This enhanced version of [rbldnsd](http://www.corpit.ru/mjt/rbldnsd.html)
+provides enhanced logging features:
 
 - IP address anonymization (via SHA256 hashing)
 - GeoIP lookup of client IP addresses
 - Contents of the reply RR
 
-Except for this documentation, the master branch is equivalent to the git
-repository at http://git.corpit.ru/?p=rbldnsd.git.
+Note that this version rbldnsd uses a tab character (`\t`) to separate the log
+fields, since the new GeoIP fields may contain spaces.
 
 Installation
 ============
 
-First, check out the branch containing the enhancements:
+The installation procedure is the same as with the stock version of rbldnsd:
 
-    git checkout enhanced-logging
+    ./configure && make && make install
 
-The installation does not differ from the basic procedure, but there exist new
-configure switches to disable features, if desired.
+Additionaly, the configure script supports the options `anonymize` and `geoip`.
+Anonymization requires OpenSSL and GeoIP lookups require libGeoIP. If your
+system provides these dependencies, these options are automatically enabled.
 
 Usage
 =====
 
-The new features require explicit actication on the command line with the
-following switches:
+The new features require explicit activation on the command line:
 
 - `-z`: enable IP address anonymization
 - `-g`: enable GeoIP lookups
+- `-L`: enables logging of answer details the logfile
