@@ -3,6 +3,7 @@ following enhancements to the basic logfile:
 
 - IP address anonymization (via SHA256 hashing)
 - GeoIP lookup of client IP addresses
+- Contents of the reply RR
 
 Except for this documentation, the master branch is equivalent to the git
 repository at http://git.corpit.ru/?p=rbldnsd.git.
