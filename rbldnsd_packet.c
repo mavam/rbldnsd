@@ -1076,18 +1076,15 @@ void logreply(const struct dnspacket *pkt, FILE *flog, int flushlog,
     }
 
     if (gir)
-      cp += sprintf(cp, "%c%s%c%s%c%s",
-                    sep, gir->country_code, sep, gir->region, sep, gir->city);
+      cp += sprintf(cp, "%c%s%c%s%c%s%c%f%c%f",
+                    sep, gir->country_code,
+                    sep, gir->region,
+                    sep, gir->city,
+                    sep, gir->latitude,
+                    sep, gir->longitude);
     else
-      cp += sprintf(cp, "%c<country>%c<region>%c<city>", sep, sep, sep);
-
-    /*
-    *cp++ = sep;
-    cp += sprintf(cp, "%f", gir && gir->latitude ? git->latitude : 0.0);
-
-    *cp++ = sep;
-    cp += sprintf(cp, "%f", gir && gir->longitude ? git->longitude : 0.0);
-    */
+      cp += sprintf(cp, "%c<country>%c<region>%c<city>%c0.0%c0.0",
+                    sep, sep, sep, sep, sep);
 
     if (gir)
       GeoIPRecord_delete(gir);
