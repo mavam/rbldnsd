@@ -982,11 +982,12 @@ static GeoIP* open_geoip_db(GeoIPDBTypes type)
 
 void logreply(const struct dnspacket *pkt, FILE *flog, int flushlog,
               int anonymize, int geoip_lookup) {
+  static const char sep = '\t';
   char cbuf[DNS_MAXDOMAIN + IPSIZE + 50];
   char *cp = cbuf;
   const unsigned char *const q = pkt->p_sans - 4;
 
-  cp += sprintf(cp, "%lu ", (unsigned long)time(NULL));
+  cp += sprintf(cp, "%lu%c", (unsigned long)time(NULL), sep);
 #ifndef NO_IPv6
   if (! getnameinfo(pkt->p_peer, pkt->p_peerlen,
                     cp, NI_MAXHOST, NULL, 0,
@@ -1073,21 +1074,21 @@ void logreply(const struct dnspacket *pkt, FILE *flog, int flushlog,
         cc = GeoIP_country_code_by_ipnum(geoip, a);
     }
 
-    *cp++ = ' ';
+    *cp++ = sep;
     if (gir && gir->country_code)
       strcpy(cp, gir->country_code);
     else
       strcpy(cp, "<country>");
     cp += strlen(cp);
 
-    *cp++ = ' ';
+    *cp++ = sep;
     if (gir && gir->region)
       strcpy(cp, gir->region);
     else
       strcpy(cp, "<region>");
     cp += strlen(cp);
 
-    *cp++ = ' ';
+    *cp++ = sep;
     if (gir && gir->city)
       strcpy(cp, gir->city);
     else
@@ -1095,11 +1096,11 @@ void logreply(const struct dnspacket *pkt, FILE *flog, int flushlog,
     cp += strlen(cp);
 
     /*
-    *cp++ = ' ';
+    *cp++ = sep;
     sprintf(cp, "%f", gir && gir->latitude ? git->latitude : 0.0);
     cp += strlen(cp);
 
-    *cp++ = ' ';
+    *cp++ = sep;
     sprintf(cp, "%f", gir && gir->longitude ? git->longitude : 0.0);
     cp += strlen(cp);
     */
@@ -1109,11 +1110,14 @@ void logreply(const struct dnspacket *pkt, FILE *flog, int flushlog,
   }
 #endif
 
-  *cp++ = ' ';
+  *cp++ = sep;
   cp += dns_dntop(pkt->p_buf + p_hdrsize, cp, DNS_MAXDOMAIN);
-  cp += sprintf(cp, " %s %s: %s/%u/%d\n",
+  cp += sprintf(cp, "%c%s%c%s%c%s/%u/%d\n",
+      sep,
       dns_typename(((unsigned)q[0]<<8)|q[1]),
+      sep,
       dns_classname(((unsigned)q[2]<<8)|q[3]),
+      sep,
       dns_rcodename(pkt->p_buf[p_f2] & pf2_rcode),
       pkt->p_buf[p_ancnt2], (int)(pkt->p_cur - pkt->p_buf));
   if (flushlog)
