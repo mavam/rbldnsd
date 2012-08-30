@@ -960,8 +960,26 @@ static int version_req(struct dnspacket *pkt, const struct dnsquery *qry) {
   return 1;
 }
 
+#ifndef NO_GEOIP
+# include <GeoIPCity.h>
+static GeoIP* open_geoip_db(GeoIPDBTypes type)
+{
+  GeoIP* geoip = 0;
+  if (GeoIP_db_avail(type)) {
+    dslog(LOG_INFO, 0, "found GeoIP database: %s",
+          GeoIPDBFileName[type]);
+    geoip = GeoIP_open_type(type, GEOIP_MEMORY_CACHE);
+  }
+  else
+    dslog(LOG_WARNING, 0, "could not find GeoIP database: %s",
+          GeoIPDBFileName[type]);
+
+  return geoip;
+}
+#endif
+
 void logreply(const struct dnspacket *pkt, FILE *flog, int flushlog,
-              int anonymize, int geoip) {
+              int anonymize, int geoip_lookup) {
   char cbuf[DNS_MAXDOMAIN + IPSIZE + 50];
   char *cp = cbuf;
   const unsigned char *const q = pkt->p_sans - 4;
@@ -982,12 +1000,103 @@ void logreply(const struct dnspacket *pkt, FILE *flog, int flushlog,
   if (anonymize) {
     sha256(cp, strlen(cp), cp);
     cp += 64;
-    *cp++ = '\0';
   }
   else
-    cp += strlen(cp);
 #else
-  cp += strlen(cp);
+    cp += strlen(cp);
+#endif
+
+  fprintf(stderr, "gir:%d\n", geoip_lookup ? 1 : 0);
+#ifndef NO_GEOIP
+  if (geoip_lookup) {
+    static int geoip_initialized = 0;
+    static GeoIP* geoip = 0;
+    static int have_city_db = 0;
+# ifndef NO_IPv6
+    static GeoIP* geoip_v6 = 0;
+    static int have_cityv6_db = 0;
+# endif
+    if (! geoip_initialized) {
+      geoip_initialized = 1;
+      geoip = open_geoip_db(GEOIP_CITY_EDITION_REV0);
+      if (geoip)
+        have_city_db = 1;
+      else {
+        geoip = open_geoip_db(GEOIP_COUNTRY_EDITION);
+        if (! geoip)
+          error(0, "can't initialize GeoIP City/Country database");
+      }
+# ifndef NO_IPv6
+#  ifdef HAVE_GEOIP_CITY_EDITION_REV0_V6
+      geoip_v6 = open_geoip_db(GEOIP_CITY_EDITION_REV0_V6);
+      if (geoip_v6)
+        have_cityv6_db = 1;
+#  endif
+#  ifdef HAVE_GEOIP_COUNTRY_EDITION_V6
+      if (! geoip_v6)
+        geoip_v6 = open_geoip_db(GEOIP_COUNTRY_EDITION_V6);
+#  endif
+      /*
+      if (! geoip_v6)
+        error(0, "can't initialize GeoIPv6 City/Country database");
+      */
+# endif
+    }
+
+    GeoIPRecord* gir = 0;
+    const char* cc = 0;
+# if !defined(NO_IPv6) && defined(HAVE_GEOIP_COUNTRY_EDITION_V6)
+    if (geoip_v6 && pkt->p_peer->sa_family == AF_INET6) {
+      geoipv6_t *ga = &((struct sockaddr_in6*)pkt->p_peer)->sin6_addr;
+      if (have_cityv6_db)
+        gir = GeoIP_record_by_ipnum_v6(geoip_v6, *ga);
+      else
+        cc = GeoIP_country_code_by_ipnum_v6(geoip_v6, *ga);
+    }
+    else
+# endif
+    if (geoip) {
+      uint32_t a = ntohl(((struct sockaddr_in*)pkt->p_peer)->sin_addr.s_addr);
+      if (have_city_db)
+        gir = GeoIP_record_by_ipnum(geoip, a);
+      else
+        cc = GeoIP_country_code_by_ipnum(geoip, a);
+    }
+
+    *cp++ = ' ';
+    if (gir && gir->country_code)
+      strcpy(cp, gir->country_code);
+    else
+      strcpy(cp, "<country>");
+    cp += strlen(cp);
+
+    *cp++ = ' ';
+    if (gir && gir->region)
+      strcpy(cp, gir->region);
+    else
+      strcpy(cp, "<region>");
+    cp += strlen(cp);
+
+    *cp++ = ' ';
+    if (gir && gir->city)
+      strcpy(cp, gir->city);
+    else
+      strcpy(cp, "<city>");
+    cp += strlen(cp);
+
+    /*
+    *cp++ = ' ';
+    sprintf(cp, "%f", gir && gir->latitude ? git->latitude : 0.0);
+    cp += strlen(cp);
+
+    *cp++ = ' ';
+    sprintf(cp, "%f", gir && gir->longitude ? git->longitude : 0.0);
+    cp += strlen(cp);
+    */
+
+    if (gir)
+      GeoIPRecord_delete(gir);
+  }
 #endif
 
   *cp++ = ' ';

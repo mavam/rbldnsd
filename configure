@@ -52,7 +52,7 @@ Optional features (all enabled by default if system supports a feature):
   master-dump - enable/disable master-format (bind) dump support (-d option)
   zlib - zlib support
   dso - dynamic extensions (using shared objects) -- disabled by default
-  anonymize - replace IP addresses with SHA256 digests in logfile
+  anonymize - anonymize IP addresses in logfile
   geoip - GeoIP support
 EOF
       exit 0
@@ -332,12 +332,11 @@ fi
 
 if [ n = "$enable_geoip" ]; then
   echo "#define NO_GEOIP	1	/* option disabled */" >>confdef.h
-elif ac_link_v "for GeoIP support" -lcrypto <<EOF
-#include <GeoIP.h>
+elif ac_link_v "for GeoIP support" -lGeoIP <<EOF
+#include <GeoIPCity.h>
 int main() {
-  GeoIP *gi;
-  gi = GeoIP_new(GEOIP_STANDARD);
-  return 0;
+  GeoIP *gi = GeoIP_new(GEOIP_STANDARD);
+  return gi == NULL;
 }
 EOF
 then
@@ -346,6 +345,26 @@ elif [ "$enable_geoip" ]; then
   ac_fatal "GeoIP support is requested but not found/available"
 else
   echo "#define NO_GEOIP" >>confdef.h
+fi
+
+if ac_link_v "for GeoIP Country Edition v6" <<EOF
+#include <GeoIPCity.h>
+int main() {
+  return GeoIP_db_avail(GEOIP_COUNTRY_EDITION_V6);
+}
+EOF
+then
+  echo "#define HAVE_GEOIP_COUNTRY_EDITION_V6" >>confdef.h
+fi
+
+if ac_link_v "for GeoIP City Edition rev0 v6" <<EOF
+#include <GeoIPCity.h>
+int main() {
+  return GeoIP_db_avail(GEOIP_CITY_EDITION_REV0_V6);
+}
+EOF
+then
+  echo "#define HAVE_GEOIP_CITY_EDITION_REV0_V6" >>confdef.h
 fi
 
 ac_output Makefile

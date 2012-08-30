@@ -115,7 +115,7 @@ int (*hook_reload_check)(), (*hook_reload)();
 int (*hook_query_access)(), (*hook_query_result)();
 #endif
 int anonymize = 0;  /* 1 to enable anonymization of IP address in log file */
-int geoip = 0;  /* 1 to add GeoIP information to log file */
+int geoip = 0;      /* 1 to add GeoIP information to log file */
 
 /* a list of zonetypes. */
 const struct dstype *ds_types[] = {
