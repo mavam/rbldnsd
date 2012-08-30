@@ -1120,7 +1120,7 @@ void logreply(const struct dnspacket *pkt, FILE *flog, int flushlog,
           cp += sprintf(cp, "%u.%u.%u.%u", q[16], q[17], q[18], q[19]);
         break;
       case DNS_T_TXT:
-        cp += sprintf(cp, "%s", q + 16);
+        cp += snprintf(cp, rdlength, "%s", q + 16);
         break;
     }
   }
