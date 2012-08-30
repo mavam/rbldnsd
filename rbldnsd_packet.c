@@ -1094,14 +1094,10 @@ void logreply(const struct dnspacket *pkt, FILE *flog, int flushlog,
   *cp++ = sep;
   cp += dns_dntop(pkt->p_buf + p_hdrsize, cp, DNS_MAXDOMAIN);
   cp += sprintf(cp, "%c%s%c%s%c%s/%u/%d",
-      sep,
-      dns_typename(((unsigned)q[0]<<8)|q[1]),
-      sep,
-      dns_classname(((unsigned)q[2]<<8)|q[3]),
-      sep,
-      dns_rcodename(pkt->p_buf[p_f2] & pf2_rcode),
-      pkt->p_buf[p_ancnt2],
-      (int)(pkt->p_cur - pkt->p_buf));
+      sep, dns_typename(((unsigned)q[0]<<8)|q[1]),
+      sep, dns_classname(((unsigned)q[2]<<8)|q[3]),
+      sep, dns_rcodename(pkt->p_buf[p_f2] & pf2_rcode),
+      pkt->p_buf[p_ancnt2], (int)(pkt->p_cur - pkt->p_buf));
 
   /* Only log answers if they're present. */
   if (verbose && pkt->p_buf[p_ancnt2] > 0) {
