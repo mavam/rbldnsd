@@ -1127,7 +1127,7 @@ void logreply(const struct dnspacket *pkt, FILE *flog, int flushlog,
     }
   }
 
-  *cp++ += '\n';
+  *cp++ = '\n';
 
   if (flushlog)
     write(fileno(flog), cbuf, cp - cbuf);
