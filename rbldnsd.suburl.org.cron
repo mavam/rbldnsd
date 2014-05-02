@@ -1,0 +1,7 @@
+#!/bin/sh
+#
+# see  http://www.surbl.org/setup-local-rbl-mirror
+#
+/usr/bin/rsync -tq some_rsync_server::surbl/multi.surbl.org.rbldnsd /var/lib/rbldnsd/mirror/multi.surbl.org
+/usr/bin/rsync -tq other_rsync_server::dsbl/rbldns-list.dsbl.org /var/lib/rbldnsd/rbldns-list.dsbl.org
+
